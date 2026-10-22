@@ -1,9 +1,8 @@
-%%writefile /kaggle/working/app.py
 from pathlib import Path
 import joblib
 import pandas as pd
 import streamlit as st
- 
+
 st.set_page_config(page_title="Оқу нәтижесін болжау", layout="centered")
 st.title("Білім беру нәтижесін болжау")
 st.write("Оқу көрсеткіштері арқылы аралық бақылау балын болжау")
@@ -11,16 +10,16 @@ st.info(
     "Оқу демонстрациясы. Модель 200 жасанды жазбамен оқытылған. "
     "Нәтиже нақты баға қоюға арналмаған."
 )
- 
+
 @st.cache_resource
 def load_model():
     path = Path(__file__).parent / "education_model.joblib"
     return joblib.load(path)
- 
+
 bundle = load_model()
 model = bundle["model"]
 features = bundle["features"]
- 
+
 with st.form("prediction_form"):
     pretest = st.slider("Бастапқы тест балы", 30, 95, 60)
     attendance = st.slider("Сабаққа қатысу (%)", 40, 100, 85)
@@ -40,6 +39,7 @@ if clicked:
     else:
         completion_pct = submitted / 10 * 100
         on_time_tasks = submitted - late
+        
         # Кеш тапсырылған жұмыстардың пайызын есептеу
         late_pct = (late / submitted * 100) if submitted > 0 else 0
         
@@ -49,13 +49,15 @@ if clicked:
             "completion_pct": completion_pct,
             "on_time_tasks": on_time_tasks
         }])
+        
         prediction = float(model.predict(row[features])[0])
+        
         st.metric("Болжамды балл", f"{prediction:.1f} / 100")
         
-        # 3 бағанға бөліп көрсету (Орындау үлесі, Уақытында, Кеш пайызы)
+        # Метрикаларды 3 бағанға бөліп көрсету
         a, b, c = st.columns(3)
         a.metric("Орындау үлесі", f"{completion_pct:.0f}%")
         b.metric("Уақытында тапсырылған", str(on_time_tasks))
-        c.metric("Кеш тапсыру пайызы", f"{late_pct:.1f}%")
+        c.metric("Кеш қалу пайызы", f"{late_pct:.1f}%")
         
         st.caption("Болжам нақты нәтижеге кепілдік бермейді.")
